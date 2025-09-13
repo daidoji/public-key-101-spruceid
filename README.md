@@ -23,6 +23,8 @@ This assignment should not take more than 4 hours. At the end you should send a 
 
 # Approach
 
+I picked Rust because a statically typed language was communicated as being important to the example project here and it was the one I'd used most recently (1.5 years ago).  I honestly don't know if I'd have done better in Scala (5 years ago), C#(7 years ago), or Java(decade+).  I'm honestly a bit out of practice.  In 2025 I probably wouldn't pick C++ although I list that on my resume as well.
+
 Honestly, in a production system I would reach for a tried and true protocol for key authentication like mutual TLS which in the Rocket Web Framework (which I picked at random) would apparently look like this example https://github.com/rwf2/Rocket/tree/master/examples/tls or some other battle tested protocol so I thought about just submitting this as my result.  A certificate is just a public key with some metadata and using mutual TLS would authenticate all payloads between the client in server for transparent web requests per the assignment.
 
 However, I thought maybe it wasn't in the spirit of the project and so I thought I'd do something different and use a did:key provided through some out of band process to the server to sign the payload according to the project assignment.  
