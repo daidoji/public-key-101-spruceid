@@ -5,8 +5,9 @@ use std::time::{Instant,
 
 use dashmap::DashMap;
 use did_key::*;
-use textnonce::TextNonce;
 use rocket::State;
+use textnonce::TextNonce;
+use urlencoding::decode;
 
 type DidKeyURI = String; // for semantic clarity
 
@@ -27,9 +28,9 @@ fn index() -> &'static str {
 
 #[get("/present-did-key/<did_key_uri>")]
 fn present_key(did_key_uri: &str, nonce_cache: &State<NonceCache>) -> String {
+    let key_uri = decode(did_key_uri).expect("did_key_uri should urldecode successfully");
     // validate did_key uri by resolving it
     let _key = resolve(did_key_uri).expect("did:key should resolve correctly");
-    let key_uri = "did:key:{key.fingerprint()}";
     // generate and store nonce for that key
     let nonce_time = NonceTime{nonce: TextNonce::new().into_string(),
                                time: Instant::now()};
@@ -65,7 +66,5 @@ fn validate_nonce(did_key_uri: &str,
 fn rocket() -> _ {
     rocket::build().
         manage(NonceCache{cache: DashMap::new()}).
-        mount("/", routes![index]).
-        mount("/present-did-key/", routes![present_key]).
-        mount("/validate-nonce/", routes![validate_nonce])
+        mount("/", routes![index, present_key, validate_nonce])
 }
