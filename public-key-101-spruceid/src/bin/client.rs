@@ -20,7 +20,8 @@ fn main() -> () {
   //  .expect("Should be able to write client key");
 
   // This automagically gets on the server from the generated key
-  //let client_didkey_uri = "did:key:z6MktXYuXzWsjSrWEJCDKKUtjnsze9bpxiQzFLonRQa4TrT1"
+  //let client_didkey_uri = 
+  //"did:key:z6MktXYuXzWsjSrWEJCDKKUtjnsze9bpxiQzFLonRQa4TrT1"
 
   //let client_priv_key = fs::read("client_key_diddoc.priv").expect("Should be able to read this file");
   //let did_key_str = str::from_utf8(&client_priv_key).expect("Should be able to decode from utf8");
