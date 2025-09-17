@@ -23,35 +23,30 @@ This assignment should not take more than 4 hours. At the end you should send a 
 
 # Approach
 
-I picked Rust because a statically typed language was communicated as being important to the example project here and it was the one I'd used most recently (1.5 years ago).  I honestly don't know if I'd have done better in Scala (5 years ago), C#(7 years ago), or Java(decade+).  I'm honestly a bit out of practice.  In 2025 I probably wouldn't pick C++ although I list that on my resume as well.
-
 Honestly, in a production system I would reach for a tried and true protocol for key authentication like mutual TLS which in the Rocket Web Framework (which I picked at random) would apparently look like this example https://github.com/rwf2/Rocket/tree/master/examples/tls or some other battle tested protocol so I thought about just submitting this as my result.  A certificate is just a public key with some metadata and using mutual TLS would authenticate all payloads between the client in server for transparent web requests per the assignment.
 
-However, I thought maybe it wasn't in the spirit of the project and so I thought I'd do something different and use a did:key provided through some out of band process to the server to sign the payload according to the project assignment.  
+However, I thought maybe it wasn't in the spirit of the project and so I thought I'd do something different and use a did:key provided through some out of band process to the server to sign the payload according to the project assignment.
 
-I'm sad to say I didn't quite make it through the greenfield example here which I'm submitting.  I was advised to pick a statically typed language and Rust was the one I'd used most recently so I figured I'd attempt the solution in Rust and spent 3 hours yesterday and another 3 hours today (Friday 12-Sep-25) and got as far as this although I may work on it a bit more this weekend to see if I can finish it up just to get the Rust reps and for my own edification.
-
-Ultimately the time was spent in figuring out a lot of Rust issues and Rocket framework and packages to use and I didn't come in on time even though I used a few extra hours to try and get done.  
+1. Assume the client holds a did:key
+2. The client presents that did:key urlencoded to the server via a GET request to the `/present-did-key/<urlencoded_did_key_uri>`
+3. The server returns a nonce if its a valid did:key uri.
+4. The client can then present the did:key and the nonce with the path `/validate-nonce/<urlencoded_did_key_uri>/<urlencoded_nonce>` alongside the header `did-key-signature` and the signature of the did:key over that same path encoded in base16 within five minutes of receiving that nonce.
+5. If the nonce is valid, is timely (within the five minute window), and the signature verifies the server replies with "Valid" if not "Invalid"
 
 # Use 
 
-It was intended to be used via: 
-1. `cargo --bin server` Starting a rocket web framework server that has an api like
-  * `/` index request that returns some information about the api
-  * `/present-did-key/<did_key_uri>` - an api to present a did:key uri and receive a nonce
-  * `/verify-nonce/<did_key_uri>/<nonce>` - an api to present the did:key and associated nonce and return "verified" or "not verified"
-2. `cargo --bin client` A short script that takes a pre-defined did:key, requests a nonce from the server for a given did:key, signs a payload proving that they hold that key (within a certain duration to be set at server configuration time to prevent stale nonces) and then remove that nonce from the server to prevent replay attacks (as well as using the TextNonce itself)
-
-Right now these scripts don't do much although they have code (no tests) showing my partial solution.
-
-TLS (not mutual) would have been used to secure the calls to and from the server with the did key to verify and simple get request API bc I was just trying to get something working.  Honestly, RFC 9421 or something like that probably should be used in a real project but I was struggling to get it completed and didn't quite get there.
+1. `cargo --bin server` Starting the server
+2. `cargo --bin client` A short script that creates a did:key, requests a nonce from the server for that key, and then signs the payload as above to validate the nonce
 
 It uses the default Ed25519 default key of the did:key crate but supports the multiple key types that that crate supports.
 
 # Caveats
 
+* This was originally a take-home problem for employment but then I finished it out to get the Rust practice in.  Def don't use this in production and my Rust is not great I'm sure.
 * did:key crate is kind of weird.  Probably should be audited a bit more before being used in production.  It claims no dependencies but then has a ton of dependencies.
-* I'm not entirely sure this is the right way to go about it or if this is necessarily secure.  Putting the nonce in the http payload might be safer but I was just going to sign a padded (did:key | nonce) pulled from the request itself.  Maybe I should use an hmac, idk.  These are things I'd have to think about a lot and double check with real life cryptographers before I'd feel comfortable with it being secure.
+* I'm not entirely sure this is the right way to go about it or if this is necessarily secure.  Maybe this is at risk of some cryptographic attacks, idk.  These are things I'd have to think about a lot and double check with real life cryptographers and other security engineers before I'd feel comfortable with it being secure.
 * Similarly with the choice of crates and packages.  Rust is supposed to be more secure but I honestly picked TextNonce because it seemed reasonable from the description as well as the Rocket Web Framework and other crate choices.  I'd probably have to understand these crates a lot more before I was comfortable with them from a security context in production.
-* Key impersonation attacks are probably still possible if a nonce is held onto by the holder for a long time before verifying and an attacker compromises the value and the key although I was planning on adding a Duration timeout.  
-* The State in rocketchat is async and I tried to use a concurrent hashmap to mitigate issues but if the attacker can compromise the key and nonce and submit within a time window that the actual holder submits can probably verify a payload without the holder or verifier necessarily being aware because I didn't have time to fully grasp the concurrency garuntees of the Dhashmap.
+* Key impersonation attacks are def possible.  We remove the nonce once its been validated but if the attacker can get the private key before the client validates the nonce there's really nothing to stop him.  
+* Similarly mitm attacks.  TLS on rocket web framework should mitigate some of this risk, but there's no authentication on the key presented.
+* Honestly, RFC 9421 or something is probably what I should use in the header signature but I've never really used it so just went with the simple solution.
+* Base16 encoding for the signature and urlencoding for the URI request are both choices.  I'm not sure they're the right ones but they work.
